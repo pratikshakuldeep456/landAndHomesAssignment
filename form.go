@@ -2,47 +2,53 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-type RequestBody struct {
+type Contact struct {
+	ID      int    `json:"id"`
+	Link    string `json:"link"`
 	Name    string `json:"name"`
 	Email   string `json:"email"`
-	Contact int64  `json:"contact"`
-}
-
-func identifyHandler(w http.ResponseWriter, r *http.Request) {
-
-	var requestBody RequestBody
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-	// Connect to the PostgreSQL database
-	db, err := sql.Open("postgres", "postgresql://username:password@localhost:5432/database_name?sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	rows, err := db.Query("SELECT * FROM Contact WHERE name =$1 OR  email = $2 OR contact = $3", requestBody.Email, requestBody.Contact)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
+	Contact string `json:"contact"`
 }
 
 func main() {
+	db, err := sql.Open("mysql", "username:password@tcp(host:port)/dbname")
+	if err != nil {
+		log.Fatal("Failed to connect to the database:", err)
+	}
+	defer db.Close()
 
-	http.HandleFunc("/identify", identifyHandler)
+	router := gin.Default()
 
-	println("hi0")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	router.POST("/api/add_contact", func(c *gin.Context) {
+		var contact Contact
+		if err := c.ShouldBindJSON(&contact); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+			return
+		}
 
-	println("hi10")
+		// Perform validation on contact.Name, contact.Email, and contact.Contact if needed
+		// Insert the data into the database
+		_, err := db.Exec("INSERT INTO contacts (link, name, email, contact) VALUES (?, ?, ?, ?)",
+			contact.Link, contact.Name, contact.Email, contact.Contact)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert data"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Data inserted successfully"})
+	})
+
+	// Run the server
+	router.Run(":8080")
 }
 
-//create a form with inputs linke name, email and contact number with validation. insert data into database using MySql.(use any preferred technology
+
+//create a api with inputs link name, email and contact number with validation. insert data into database using MySql
