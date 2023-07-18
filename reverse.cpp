@@ -8,22 +8,17 @@ int main(){
     cin>>s ; 
     string ans = "" ;  
      string temp ; 
-    for(int i=0;i<s.length();i++){ 
-    	temp  = s[i] +  temp  ;  
-          if (s[i] == ' '){ 
-          	i++;
-           	 ans = ans + temp ; 
-           	ans = ans + ' ' ; 
-           	temp = "" ;   
-           } 
-          
-      
+    for (int i = 0; i < s.length(); i++) { 
+        if (s[i] == ' ') { 
+            ans = temp + ' ' + ans; 
+            temp = "";   
+        } else {
+            temp = s[i] + temp;
+        }
     }  
-    ans = ans + temp ;  
-  
-    for(int i=0;i<ans.length();i++){
-    	cout<<ans[i] ;
-    }
-    //return ans ; 
+
+    ans = temp + ' ' + ans; 
+
+    cout << ans << endl; 
     return 0 ;
 }
